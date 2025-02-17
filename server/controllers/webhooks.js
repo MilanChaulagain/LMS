@@ -20,7 +20,7 @@ export const clerkWebhooks = async (req, res)=> {
         const {data, type} = req.body
 
         switch (type) {
-            case 'user.created': {
+            case 'users.created': {
                 const userData = {
                     _id: data.id,
                     email: data.email_addresses[0].email_address,
@@ -32,7 +32,7 @@ export const clerkWebhooks = async (req, res)=> {
                 break;
             }
                 
-            case 'user.updated': {
+            case 'users.updated': {
                 const userData = {
                     email: data.email_addresses[0].email_address,
                     name: data.first_name + " " + data.last_name,
@@ -42,7 +42,7 @@ export const clerkWebhooks = async (req, res)=> {
                 res.json({})
                 break;
             }
-            case 'user.deleted': {
+            case 'users.deleted': {
                 await User.findByIdAndDelete(data.id);
                 res.json({})
                 break;
