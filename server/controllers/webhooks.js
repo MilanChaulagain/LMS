@@ -17,11 +17,14 @@ export const clerkWebhooks = async (req, res) => {
     const payload = await getRawBody(req); // Get raw body
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
+    
     const evt = whook.verify(payload, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
     });
+
+    console.log("✅ Clerk event received:", evt.type);
 
     const { data, type } = evt;
 
