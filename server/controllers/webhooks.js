@@ -6,19 +6,16 @@ import Course from "../models/Course.js";
 
 // Needed to read raw body
 import getRawBody from 'raw-body';
-import connectDB from "../configs/mongodb.js";
 
 const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Clerk Webhook Handler
 export const clerkWebhooks = async (req, res) => {
   try {
-    await connectDB(); 
-    const payload = await getRawBody(req); // Get raw body
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
-    
-    const evt = whook.verify(payload, {
+
+    await whook.verify(JSON.stringify(req.body), {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
@@ -26,7 +23,7 @@ export const clerkWebhooks = async (req, res) => {
 
     console.log("✅ Clerk event received:", evt.type);
 
-    const { data, type } = evt;
+    const { data, type } = req.body;
 
     switch (type) {
         case 'user.created': {

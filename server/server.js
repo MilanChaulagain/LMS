@@ -25,7 +25,7 @@ app.use(express.json());
 
 //Routes
 app.get('/', (req, res)=> res.send("API working"))
-app.post("/api/clerk", express.raw({type: "application/json"}), clerkWebhooks);
+app.post("/api/clerk", express.json(), clerkWebhooks);
 app.use('/api/educator', express.json(), educatorRouter)
 app.use('/api/course', express.json(), courseRouter)
 app.use('/api/user', express.json(), userRouter)
