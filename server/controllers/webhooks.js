@@ -6,12 +6,14 @@ import Course from "../models/Course.js";
 
 // Needed to read raw body
 import getRawBody from 'raw-body';
+import connectDB from "../configs/mongodb.js";
 
 const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Clerk Webhook Handler
 export const clerkWebhooks = async (req, res) => {
   try {
+    await connectDB(); 
     const payload = await getRawBody(req); // Get raw body
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
@@ -24,17 +26,23 @@ export const clerkWebhooks = async (req, res) => {
     const { data, type } = evt;
 
     switch (type) {
-      case 'user.created': {
-        const userData = {
-          _id: data.id,
-          email: data.email_addresses[0].email_address,
-          name: data.first_name + " " + data.last_name,
-          imageUrl: data.image_url,
-        };
-        await User.create(userData);
-        res.status(200).json({});
-        break;
-      }
+        case 'user.created': {
+            try {
+              const userData = {
+                _id: data.id,
+                email: data.email_addresses?.[0]?.email_address ?? null,
+                name: (data.first_name ?? '') + " " + (data.last_name ?? ''),
+                imageUrl: data.image_url ?? '',
+              };
+              console.log("Creating user in MongoDB with:", userData);
+              await User.create(userData);
+              res.status(200).json({});
+            } catch (err) {
+              console.error("Error saving user to MongoDB:", err.message);
+              res.status(500).json({success: false, message: err.message});
+            }
+            break;
+          }
 
       case 'user.updated': {
         const userData = {
