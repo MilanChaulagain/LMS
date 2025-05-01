@@ -12,62 +12,57 @@ const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
 // Clerk Webhook Handler
 export const clerkWebhooks = async (req, res) => {
   try {
-    const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-
-
-    await whook.verify(JSON.stringify(req.body), {
+    const payload = await getRawBody(req);
+    const headers = {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
-    });
+    };
 
-    console.log("✅ Clerk event received:", evt.type);
+    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+    const evt = wh.verify(payload, headers); // This gives you the parsed event
 
-    const { data, type } = req.body;
+    const { data, type } = evt;
+
+    console.log("✅ Clerk event received:", type);
 
     switch (type) {
-        case 'user.created': {
-            try {
-              const userData = {
-                _id: data.id,
-                email: data.email_addresses?.[0]?.email_address ?? null,
-                name: (data.first_name ?? '') + " " + (data.last_name ?? ''),
-                imageUrl: data.image_url ?? '',
-              };
-              console.log("Creating user in MongoDB with:", userData);
-              await User.create(userData);
-              res.status(200).json({});
-            } catch (err) {
-              console.error("Error saving user to MongoDB:", err.message);
-              res.status(500).json({success: false, message: err.message});
-            }
-            break;
-          }
-
-      case 'user.updated': {
+      case "user.created": {
         const userData = {
-          email: data.email_addresses[0].email_address,
-          name: data.first_name + " " + data.last_name,
-          imageUrl: data.image_url,
+          _id: data.id,
+          email: data.email_addresses?.[0]?.email_address ?? null,
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`,
+          imageUrl: data.image_url ?? "",
         };
-        await User.findByIdAndUpdate(data.id, userData);
-        res.status(200).json({});
-        break;
+
+        console.log("Creating user in MongoDB with:", userData);
+        await User.create(userData);
+        return res.status(200).json({});
       }
 
-      case 'user.deleted': {
+      case "user.updated": {
+        const userData = {
+          email: data.email_addresses?.[0]?.email_address,
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`,
+          imageUrl: data.image_url ?? "",
+        };
+
+        await User.findByIdAndUpdate(data.id, userData);
+        return res.status(200).json({});
+      }
+
+      case "user.deleted": {
         await User.findByIdAndDelete(data.id);
-        res.status(200).json({});
-        break;
+        return res.status(200).json({});
       }
 
       default:
-        res.status(200).json({});
-        break;
+        console.log("Unhandled Clerk event type:", type);
+        return res.status(200).json({});
     }
   } catch (error) {
-    console.error('Clerk webhook error:', error);
-    res.status(400).json({ success: false, message: error.message });
+    console.error("❌ Clerk webhook error:", error.message);
+    return res.status(400).json({ success: false, message: error.message });
   }
 };
 
