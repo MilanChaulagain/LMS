@@ -20,8 +20,7 @@ await connectCloudinary()
 
 app.use(cors())
 app.use(clerkMiddleware())
-// Other normal JSON routes
-app.use(express.json());
+
 
 //Routes
 app.get('/', (req, res)=> res.send("API working"))
@@ -30,6 +29,9 @@ app.use('/api/educator', express.json(), educatorRouter)
 app.use('/api/course', express.json(), courseRouter)
 app.use('/api/user', express.json(), userRouter)
 app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
+
+// Other normal JSON routes
+app.use(express.json());
 
 //PORT
 const PORT = process.env.PORT || 5000
