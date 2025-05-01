@@ -10,61 +10,55 @@ import getRawBody from 'raw-body';
 const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Clerk Webhook Handler
-export const clerkWebhooks = async (req, res) => {
+export const clerkWebhooks = async (req, res)=> {
   try {
-    const payload = await getRawBody(req);
-    const headers = {
-      "svix-id": req.headers["svix-id"],
-      "svix-timestamp": req.headers["svix-timestamp"],
-      "svix-signature": req.headers["svix-signature"],
-    };
+      const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET)
 
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    const evt = wh.verify(payload, headers); // This gives you the parsed event
+      await whook.verify(JSON.stringify(req.body), {
+          "svix-id": req.headers["svix-id"],
+          "svix-timestamp": req.headers["svix-timestamp"],
+          "svix-signature": req.headers["svix-signature"],
 
-    const { data, type } = evt;
+      })
 
-    console.log("✅ Clerk event received:", type);
+      const {data, type} = req.body
 
-    switch (type) {
-      case "user.created": {
-        const userData = {
-          _id: data.id,
-          email: data.email_addresses?.[0]?.email_address ?? null,
-          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`,
-          imageUrl: data.image_url ?? "",
-        };
-
-        console.log("Creating user in MongoDB with:", userData);
-        await User.create(userData);
-        return res.status(200).json({});
-      }
-
-      case "user.updated": {
-        const userData = {
-          email: data.email_addresses?.[0]?.email_address,
-          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`,
-          imageUrl: data.image_url ?? "",
-        };
-
-        await User.findByIdAndUpdate(data.id, userData);
-        return res.status(200).json({});
-      }
-
-      case "user.deleted": {
-        await User.findByIdAndDelete(data.id);
-        return res.status(200).json({});
-      }
-
-      default:
-        console.log("Unhandled Clerk event type:", type);
-        return res.status(200).json({});
-    }
+      switch (type) {
+          case 'user.created': {
+              const userData = {
+                  _id: data.id,
+                  email: data.email_addresses[0].email_address,
+                  name: data.first_name + " " + data.last_name,
+                  imageUrl: data.image_url,
+              }
+              await User.create(userData)
+              res.json({})
+              break;
+          }
+              
+          case 'user.updated': {
+              const userData = {
+                  email: data.email_address[0].email_address,
+                  name: data.first_name + " " + data.last_name,
+                  imageUrl: data.image_url,
+              }
+              await User.findByIdAndUpdate(data.id, userData);
+              res.json({})
+              break;
+          }
+          case 'user.deleted': {
+              await User.findByIdAndDelete(data.id);
+              res.json({})
+              break;
+          }
+      
+          default:
+              break;
+      } 
   } catch (error) {
-    console.error("❌ Clerk webhook error:", error.message);
-    return res.status(400).json({ success: false, message: error.message });
+      res.json({success: false, message: error.message})
   }
-};
+}
 
 // Stripe Webhook Handler
 export const stripeWebhooks = async (req, res) => {
