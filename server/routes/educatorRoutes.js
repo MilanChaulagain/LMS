@@ -1,19 +1,28 @@
 import express from "express";
 
-import { addCourse, educatorDashboardData, getEducatorCourses, getEnrolledStudentsData, updateRoleToEducator } from "../controllers/educatorController.js";
+import { addCourse, applyToEducator, educatorDashboardData, getEducatorCourses, getEnrolledStudentsData, updateRoleToEducator, uploadVideo, editCourse, deleteCourse, getEducatorCourse } from "../controllers/educatorController.js";
 import upload from "../configs/multer.js";
-import { protectEducator } from "../middlewares/authMiddleware.js";
+import { authMiddleware, protectEducator } from "../middlewares/authMiddleware.js";
 
 const educatorRouter = express.Router();
 
-//Add Educator Role
-educatorRouter.get('/update-role', updateRoleToEducator)
+//Apply to become Educator
+educatorRouter.post('/apply', authMiddleware, applyToEducator)
 
-educatorRouter.post('/add-course', upload.single('image'), protectEducator, addCourse);
+//Add Educator Role (legacy)
+educatorRouter.get('/update-role', authMiddleware, updateRoleToEducator)
 
-educatorRouter.get('/courses', protectEducator, getEducatorCourses);
-educatorRouter.get('/dashboard', protectEducator, educatorDashboardData);
-educatorRouter.get('/enrolled-students', protectEducator, getEnrolledStudentsData);
+//Upload video
+educatorRouter.post('/upload-video', authMiddleware, upload.single('video'), uploadVideo);
+
+educatorRouter.post('/add-course', authMiddleware, upload.single('image'), protectEducator, addCourse);
+educatorRouter.put('/edit-course/:courseId', authMiddleware, upload.single('image'), protectEducator, editCourse);
+educatorRouter.delete('/delete-course/:courseId', authMiddleware, protectEducator, deleteCourse);
+
+educatorRouter.get('/courses', authMiddleware, protectEducator, getEducatorCourses);
+educatorRouter.get('/course/:courseId', authMiddleware, protectEducator, getEducatorCourse);
+educatorRouter.get('/dashboard', authMiddleware, protectEducator, educatorDashboardData);
+educatorRouter.get('/enrolled-students', authMiddleware, protectEducator, getEnrolledStudentsData);
 
 export default educatorRouter;
 

@@ -1,13 +1,14 @@
-import React, { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../../context/AppContext'
 import { useParams } from 'react-router-dom'
 import { assets } from '../../assets/assets'
 import humanizeDuration from 'humanize-duration'
-import YouTube from 'react-youtube'
+import VideoPlayer from '../../components/student/VideoPlayer'
 import Footer from '../../components/student/Footer'
 import Rating from '../../components/student/Rating'
 import { toast } from 'react-toastify'
 import Loading from '../../components/student/Loading'
+import axios from 'axios'
 
 const Player = () => {
 
@@ -163,7 +164,7 @@ const Player = () => {
       <div className='md:mt-10'>
         {playerData ? (
           <div>
-           <YouTube videoId={playerData.lectureUrl.split('/').pop()}  iframeClassName='w-full aspect-video'/>
+           <VideoPlayer url={playerData.lectureUrl} autoplay={false} className='w-full aspect-video'/>
            <div className='flex justify-between items-center mt-1'>
             <p>{playerData.chapter}.{playerData.lecture} {playerData.lectureTitle}</p>
             <button  onClick={()=> markLectureAsCompleted(playerData.lectureId)} className='text-blue-600 cursor-pointer '>{progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? 'Completed' : 'Mark Complete'}</button>

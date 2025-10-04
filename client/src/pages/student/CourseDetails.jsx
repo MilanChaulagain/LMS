@@ -1,11 +1,12 @@
-import React, { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import Loading from '../../components/student/Loading';
 import { assets } from '../../assets/assets';
 import humanizeDuration from 'humanize-duration';
 import Footer from '../../components/student/Footer';
-import YouTube from 'react-youtube';
+import VideoPlayer from '../../components/student/VideoPlayer';
+import PaymentMethodModal from '../../components/student/PaymentMethodModal';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
@@ -17,6 +18,7 @@ const CourseDetails = () => {
   const [openSections, setopenSections] = useState({});
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [playerData, setPlayerData] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
 
   const {allCourses, calculateRating, calculateNumberOfLectures, calculateCourseDuration, calculateChapterTime, currency, backendUrl, userData, getToken} = useContext(AppContext);
@@ -45,26 +47,52 @@ const CourseDetails = () => {
         return toast.warning("Already Enrolled");
       }
 
+      // Show payment method selection modal
+      setShowPaymentModal(true);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+  const handlePaymentMethodSelection = async (paymentMethod) => {
+    try {
       const token = await getToken();
 
       const {data} = await axios.post(backendUrl + '/api/user/purchase', {
-        courseId: courseData._id},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        courseId: courseData._id,
+        paymentMethod: paymentMethod
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      )
+      });
 
       if(data.success) {
-        const {session_url} = data;
-        window.location.replace(session_url)
-      }
-      else {
-        toast.error(data.message)
+        if (paymentMethod === 'khalti') {
+          // Redirect to Khalti payment page
+          window.location.href = data.payment_url;
+        } else if (paymentMethod === 'esewa') {
+          // Create a form and submit to eSewa
+          const form = document.createElement('form');
+          form.action = data.payment_url;
+          form.method = 'POST';
+
+          Object.keys(data.payment_params).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data.payment_params[key];
+            form.appendChild(input);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      } else {
+        toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.message);
     }
   }
 
@@ -145,7 +173,7 @@ const CourseDetails = () => {
                                       <div className='flex gap-2'>
                                         {lecture.isPreviewFree && <p className='text-blue-500 cursor-pointer'
                                         onClick={()=> setPlayerData({
-                                          videoId: lecture.lectureUrl.split('/').pop()
+                                          videoUrl: lecture.lectureUrl
                                         })}
                                         >Preview</p>}
                                         <p>{humanizeDuration(lecture.lectureDuration *60 *1000, {units: ['h', 'm']})}</p>
@@ -170,7 +198,7 @@ const CourseDetails = () => {
       <div className='max-w-course-card z-10 shadow-custom-card rounded-t md:rounded-none overflow-hidden bg-white min-w-[300px] sm:min-w-[420px]'>
             {
                playerData ? 
-               <YouTube videoId={playerData.videoId} opts={{playerVars: {autoplay: 1}}} iframeClassName='w-full aspect-video'/>
+               <VideoPlayer url={playerData.videoUrl} autoplay={true} className='w-full aspect-video'/>
              :  <img src={courseData.courseThumbnail} alt="" />
              
             }
@@ -232,6 +260,16 @@ const CourseDetails = () => {
             </div>
       </div>
     </div>
+    
+    {/* Payment Method Modal */}
+    <PaymentMethodModal
+      isOpen={showPaymentModal}
+      onClose={() => setShowPaymentModal(false)}
+      onSelectPayment={handlePaymentMethodSelection}
+      courseData={courseData}
+      currency={currency}
+    />
+    
     <Footer />
     </>
   ) : <Loading />

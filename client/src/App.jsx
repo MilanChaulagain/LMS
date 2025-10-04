@@ -1,17 +1,19 @@
-import React from 'react'
 import { Route, Routes, useMatch } from 'react-router-dom'
 import Home from './pages/student/Home'
 import CoursesList from './pages/student/CoursesList'
 import CourseDetails from './pages/student/CourseDetails'
 import MyEnrollments from './pages/student/MyEnrollments'
 import Player from './pages/student/Player'
+import PaymentSuccess from './pages/student/PaymentSuccess'
+import PaymentFailure from './pages/student/PaymentFailure'
 import Loading from './components/student/Loading'
 import Educator from './pages/educator/Educator'
 import Dashboard from './pages/educator/Dashboard'
 import AddCourse from './pages/educator/AddCourse'
+import EditCourse from './pages/educator/EditCourse'
 import MyCourses from './pages/educator/MyCourses'
 import StudentsEnrolled from './pages/educator/StudentsEnrolled'
-import Navbar from './components/student/navbar'
+import Navbar from './components/student/Navbar'
 import "quill/dist/quill.snow.css";
 import {ToastContainer} from "react-toastify"
 
@@ -21,7 +23,7 @@ const App = () => {
 
   return (
     <div className='text-default mih-h-height bg-white'>
-      <ToastContainer />
+      <ToastContainer/>
       {!isEducatorRoute && <Navbar />}
       <Routes>
         <Route path='/' element={<Home />} />
@@ -30,10 +32,13 @@ const App = () => {
         <Route path='/course/:id' element={<CourseDetails />} />
         <Route path='/my-enrollments' element={<MyEnrollments />} />
         <Route path='/player/:courseId' element={<Player />} />
+        <Route path='/payment/success' element={<PaymentSuccess />} />
+        <Route path='/payment/failure' element={<PaymentFailure />} />
         <Route path='/loading/:path' element={<Loading />} />
         <Route path='/educator' element={<Educator />} >
           <Route path='/educator' element={<Dashboard />} />
           <Route path='add-course' element={<AddCourse />} />
+          <Route path='edit-course/:courseId' element={<EditCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
           <Route path='student-enrolled' element={<StudentsEnrolled />} />
         </Route>

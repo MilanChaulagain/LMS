@@ -1,15 +1,18 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useCallback } from 'react'
 import { AppContext } from '../../context/AppContext'
 import Loading from '../../components/student/Loading';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import { assets } from '../../assets/assets';
 
 const MyCourses = () => {
 
   const {currency, backendUrl, getToken, isEducator} = useContext(AppContext);
   const [courses, setCourses] = useState(null);
+  const navigate = useNavigate();
 
-  const fetchEducatorCourses = async () => {
+  const fetchEducatorCourses = useCallback(async () => {
     try {
       const token = await getToken();
       const {data} = await axios.get(backendUrl + '/api/educator/courses', 
@@ -19,13 +22,38 @@ const MyCourses = () => {
     } catch (error) {
       toast.error(error.message);
     }
+  }, [getToken, backendUrl])
+
+  const handleEditCourse = (courseId) => {
+    navigate(`/educator/edit-course/${courseId}`);
+  }
+
+  const handleDeleteCourse = async (courseId) => {
+    if (window.confirm('Are you sure you want to delete this course?')) {
+      try {
+        const token = await getToken();
+        const {data} = await axios.delete(`${backendUrl}/api/educator/delete-course/${courseId}`, {
+          headers: {Authorization: `Bearer ${token}`}
+        });
+        
+        if (data.success) {
+          toast.success('Course deleted successfully');
+          fetchEducatorCourses(); // Refresh the courses list
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        console.error('Error deleting course:', error);
+        toast.error('Error deleting course');
+      }
+    }
   }
 
   useEffect(()=> {
     if(isEducator){
       fetchEducatorCourses();
     }
-  }, [isEducator])
+  }, [isEducator, fetchEducatorCourses])
 
   return courses ? (
     <div className='h-screen flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0'>
@@ -39,6 +67,7 @@ const MyCourses = () => {
                 <th className='px-4 py-3 font-semibold truncate'>Earnings</th>
                 <th className='px-4 py-3 font-semibold truncate'>Students</th>
                 <th className='px-4 py-3 font-semibold truncate'>Published On</th>
+                <th className='px-4 py-3 font-semibold truncate'>Actions</th>
               </tr>
             </thead>
             <tbody className='text-sm text-gray-500'>
@@ -54,6 +83,24 @@ const MyCourses = () => {
                   <td className='px-4 py-3'>{course.enrolledStudents.length}</td>
                   <td className='px-4 py-3'>
                     {new Date(course.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className='px-4 py-3'>
+                    <div className='flex gap-2'>
+                      <button
+                        onClick={() => handleEditCourse(course._id)}
+                        className='bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs'
+                        title="Edit Course"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCourse(course._id)}
+                        className='bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs'
+                        title="Delete Course"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

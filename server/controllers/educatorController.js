@@ -1,4 +1,3 @@
-import {clerkClient} from "@clerk/express"
 import Course from "../models/Course.js";
 import {v2 as cloudinary} from "cloudinary"
 import dotenv from 'dotenv';
@@ -12,17 +11,126 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
+//upload video for lecture
+export const uploadVideo = async (req, res) => {
+    try {
+        const videoFile = req.file;
 
-//update role to educator
+        if (!videoFile) {
+            return res.json({
+                success: false,
+                message: "No video file uploaded"
+            });
+        }
+
+        // Check if file is a video
+        if (!videoFile.mimetype.startsWith('video/')) {
+            return res.json({
+                success: false,
+                message: "Only video files are allowed"
+            });
+        }
+
+        // Upload to cloudinary
+        const videoUpload = await cloudinary.uploader.upload(videoFile.path, {
+            resource_type: "video",
+            folder: "course_videos",
+            transformation: [
+                { quality: "auto" },
+                { format: "mp4" }
+            ]
+        });
+
+        return res.json({
+            success: true,
+            message: "Video uploaded successfully",
+            videoUrl: videoUpload.secure_url
+        });
+
+    } catch (error) {
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+
+//apply to become educator
+export const applyToEducator = async (req, res)=> {
+    try {
+        const userId = req.userId;
+        const { expertise, experience, motivation } = req.body;
+
+        if (!expertise || !experience || !motivation) {
+            return res.json({
+                success: false,
+                message: "Please fill in all required fields"
+            })
+        }
+
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        if (user.role === 'educator') {
+            return res.json({
+                success: false,
+                message: "You are already an educator"
+            })
+        }
+
+        // Store application details (you could save these to a separate collection if needed)
+        user.role = 'educator';
+        user.educatorProfile = {
+            expertise,
+            experience,
+            motivation,
+            approvedAt: new Date()
+        };
+        
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "Congratulations! Your educator application has been approved!"
+        })
+    } catch (error) {
+        res.json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+//update role to educator (legacy - keeping for backwards compatibility)
 export const updateRoleToEducator = async (req, res)=> {
     try {
-        const userId = req.auth.userId;
+        const userId = req.userId;
 
-        await clerkClient.users.updateUserMetadata(userId,{
-            publicMetadata: {
-                role: 'educator',
-            }
-        })
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        if (user.role === 'educator') {
+            return res.json({
+                success: true,
+                message: "You are already an educator"
+            })
+        }
+
+        user.role = 'educator';
+        await user.save();
 
         res.json({
             success: true,
@@ -43,7 +151,7 @@ export const addCourse = async (req, res)=> {
         const {courseData} = req.body;
         const imageFile = req.file
 
-        const educatorId = req.auth.userId
+        const educatorId = req.userId
 
         if(!imageFile) {
             return res.json({
@@ -80,7 +188,7 @@ export const addCourse = async (req, res)=> {
 
 export const getEducatorCourses = async(req, res)=> {
     try {
-        const educator = req.auth.userId;
+        const educator = req.userId;
 
         const courses = await Course.find({educator})
 
@@ -97,11 +205,40 @@ export const getEducatorCourses = async(req, res)=> {
     }
 }
 
+//get single course for editing (educator only)
+
+export const getEducatorCourse = async(req, res)=> {
+    try {
+        const educator = req.userId;
+        const { courseId } = req.params;
+
+        const course = await Course.findOne({_id: courseId, educator});
+
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to edit it"
+            });
+        }
+
+        res.json({
+            success: true,
+            course
+        })
+        
+    } catch (error) {
+        res.json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
 // Get Educator Dashboard Data (Total Earning, Enrolled Students, No of courses)
 
 export const educatorDashboardData = async (req, res)=> {
     try {
-        const educator = req.auth.userId;
+        const educator = req.userId;
 
         const courses = await Course.find({educator});
 
@@ -155,7 +292,7 @@ export const educatorDashboardData = async (req, res)=> {
 
 export const getEnrolledStudentsData = async (req, res)=> {
     try {
-        const educator = req.auth.userId;
+        const educator = req.userId;
 
         const courses = await Course.find({educator});
 
@@ -182,5 +319,124 @@ export const getEnrolledStudentsData = async (req, res)=> {
             success: false,
             message: error.message
         })
+    }
+}
+
+//edit course
+
+export const editCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { courseData } = req.body;
+        const imageFile = req.file;
+        const educatorId = req.userId;
+
+        // Check if course exists and belongs to educator
+        const course = await Course.findOne({ _id: courseId, educator: educatorId });
+        
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to edit it"
+            });
+        }
+
+        const parsedCourseData = JSON.parse(courseData);
+
+        // Update course fields
+        course.courseTitle = parsedCourseData.courseTitle;
+        course.courseDescription = parsedCourseData.courseDescription;
+        course.coursePrice = parsedCourseData.coursePrice;
+        course.discount = parsedCourseData.discount;
+        course.courseContent = parsedCourseData.courseContent;
+
+        // Update thumbnail if new image provided
+        if (imageFile) {
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path);
+            course.courseThumbnail = imageUpload.secure_url;
+        }
+
+        await course.save();
+
+        return res.json({
+            success: true,
+            message: "Course updated successfully"
+        });
+
+    } catch (error) {
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+//delete course
+
+export const deleteCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const educatorId = req.userId;
+
+        // Check if course exists and belongs to educator
+        const course = await Course.findOne({ _id: courseId, educator: educatorId });
+        
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to delete it"
+            });
+        }
+
+        // Check if course has enrolled students
+        if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+            return res.json({
+                success: false,
+                message: "Cannot delete course with enrolled students"
+            });
+        }
+
+        await Course.findByIdAndDelete(courseId);
+
+        return res.json({
+            success: true,
+            message: "Course deleted successfully"
+        });
+
+    } catch (error) {
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+//get course for editing (educator only, includes all data)
+
+export const getCourseForEdit = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const educatorId = req.userId;
+
+        // Check if course exists and belongs to educator
+        const course = await Course.findOne({ _id: courseId, educator: educatorId });
+        
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to edit it"
+            });
+        }
+
+        return res.json({
+            success: true,
+            course
+        });
+
+    } catch (error) {
+        return res.json({
+            success: false,
+            message: error.message
+        });
     }
 }

@@ -1,10 +1,9 @@
 import { createContext, useEffect, useState } from "react";
-import { dummyCourses } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import humanizeDuration from "humanize-duration"
-import {useAuth, useUser} from "@clerk/clerk-react"
 import axios from "axios"
 import { toast } from "react-toastify";
+import PropTypes from 'prop-types';
 
 export const AppContext = createContext()
 
@@ -16,13 +15,28 @@ export const AppContextProvider = (props) => {
 
     const navigate = useNavigate()
 
-    const {getToken} = useAuth()
-    const {user} = useUser()
-
+    const [user, setUser] = useState(null)
+    const [token, setToken] = useState(localStorage.getItem('token') || null)
     const [allCourses, setAllCourses] = useState([]);
     const [isEducator, setIsEducator] = useState(false);
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [userData, setUserData] = useState(null)
+
+    // Function to get token for API calls
+    const getToken = () => {
+        return token
+    }
+
+    // Function to logout user
+    const logout = () => {
+        setUser(null)
+        setToken(null)
+        setUserData(null)
+        setIsEducator(false)
+        setEnrolledCourses([])
+        localStorage.removeItem('token')
+        navigate('/')
+    }
 
     //Fetch all courses
 
@@ -45,13 +59,12 @@ export const AppContextProvider = (props) => {
     //Fetch userData
 
     const fetchUserData = async () => {
+        if (!token || !user) return
 
-        if(user.publicMetadata.role === 'educator') {
+        if (user.role === 'educator') {
             setIsEducator(true);
         }
         try {
-            const token = await getToken();
-
             const {data} = await axios.get(backendUrl + '/api/user/data', {headers: {
                 Authorization: `Bearer ${token}`
             }});
@@ -110,8 +123,9 @@ export const AppContextProvider = (props) => {
 
     //Fetch user enrolled courses
     const fetchUserEnrolledCourses = async()=> {
+        if (!token) return
+        
         try {
-            const token = await getToken();
             const {data} = await axios.get(backendUrl + '/api/user/enrolled-courses', {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -128,21 +142,47 @@ export const AppContextProvider = (props) => {
         }
     }
 
+    // Function to verify and load user from token
+    const loadUserFromToken = async () => {
+        if (!token) return
+
+        try {
+            const { data } = await axios.get(backendUrl + '/api/user/profile', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+
+            if (data.success) {
+                setUser(data.user)
+                if (data.user.role === 'educator') {
+                    setIsEducator(true)
+                }
+            } else {
+                logout()
+            }
+        } catch (error) {
+            console.log(error);
+            logout()
+        }
+    }
+
     useEffect(()=> {
         fetchAllCourses();
     }, [])
 
-    // const logToken = async ()=> {
-    //     console.log(await getToken())
-    // }
+    useEffect(()=> {
+        if (token) {
+            loadUserFromToken()
+        }
+    }, [token])
 
     useEffect(()=> {
-        if(user) {
-            // logToken()
+        if(user && token) {
             fetchUserData()
             fetchUserEnrolledCourses()
         }
-    }, [user])
+    }, [user, token])
 
     const value = {
         currency,
@@ -160,7 +200,12 @@ export const AppContextProvider = (props) => {
         userData,
         setUserData,
         getToken,
-        fetchAllCourses
+        fetchAllCourses,
+        user,
+        setUser,
+        token,
+        setToken,
+        logout
     }
 
     return (
@@ -168,4 +213,8 @@ export const AppContextProvider = (props) => {
             {props.children}
         </AppContext.Provider>
     )
+}
+
+AppContextProvider.propTypes = {
+    children: PropTypes.node.isRequired
 }
