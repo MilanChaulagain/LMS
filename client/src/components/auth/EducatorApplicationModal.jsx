@@ -63,11 +63,11 @@ const EducatorApplicationModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+     <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
       <div className="relative max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 z-10"
+          className="absolute top-1 right-1 text-yellow-950 cursor-pointer rounded-full w-12 h-12 flex items-center justify-center z-10 text-4xl hover:bg-gray-100/20"
         >
           ×
         </button>
