@@ -10,6 +10,7 @@ const Navbar = () => {
 
     const {navigate, isEducator, user, logout} = useContext(AppContext);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+    const [authModalMode, setAuthModalMode] = useState('login')
     const [isEducatorModalOpen, setIsEducatorModalOpen] = useState(false)
     const [showUserMenu, setShowUserMenu] = useState(false)
 
@@ -34,6 +35,16 @@ const Navbar = () => {
         logout()
         setShowUserMenu(false)
         toast.success('Logged out successfully')
+    }
+
+    const openLoginModal = () => {
+        setAuthModalMode('login')
+        setIsAuthModalOpen(true)
+    }
+
+    const openRegisterModal = () => {
+        setAuthModalMode('register')
+        setIsAuthModalOpen(true)
     }
 
   return (
@@ -76,12 +87,20 @@ const Navbar = () => {
                     )}
                 </div>
             ) :
-                <button 
-                    onClick={() => setIsAuthModalOpen(true)} 
-                    className='bg-blue-600 text-white px-5 py-2 rounded-full cursor-pointer'
-                >
-                    Create Account
-                </button>}
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={openLoginModal} 
+                        className='text-blue-600 hover:text-blue-800 font-medium px-3 py-2 rounded-md border border-blue-600 hover:bg-blue-50 cursor-pointer transition-colors'
+                    >
+                        Login
+                    </button>
+                    <button 
+                        onClick={openRegisterModal} 
+                        className='bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 cursor-pointer transition-colors'
+                    >
+                        Create Account
+                    </button>
+                </div>}
         </div>
         {/*This is for smaller phone screens*/}
         <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
@@ -120,16 +139,27 @@ const Navbar = () => {
                         )}
                     </div>
                 ) : 
-            <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className = 'cursor-pointer'
-            ><img src={assets.user_icon} alt="" /></button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={openLoginModal}
+                        className='text-blue-600 text-xs px-2 py-1 border border-blue-600 rounded cursor-pointer'
+                    >
+                        Login
+                    </button>
+                    <button
+                        onClick={openRegisterModal}
+                        className='bg-blue-600 text-white text-xs px-2 py-1 rounded cursor-pointer'
+                    >
+                        Sign Up
+                    </button>
+                </div>
             }
         </div>
 
         <AuthModal 
             isOpen={isAuthModalOpen} 
-            onClose={() => setIsAuthModalOpen(false)} 
+            onClose={() => setIsAuthModalOpen(false)}
+            initialMode={authModalMode}
         />
         
         <EducatorApplicationModal 

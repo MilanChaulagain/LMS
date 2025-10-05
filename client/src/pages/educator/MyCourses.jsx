@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react'
+import { useContext, useEffect, useState, useCallback } from 'react'
 import { AppContext } from '../../context/AppContext'
 import Loading from '../../components/student/Loading';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { assets } from '../../assets/assets';
+// import { assets } from '../../assets/assets';
 
 const MyCourses = () => {
 
