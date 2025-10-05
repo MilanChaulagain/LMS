@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { assets } from '../../assets/assets'
 import { AppContext } from '../../context/AppContext';
 import { NavLink } from 'react-router-dom';
@@ -12,6 +12,8 @@ const Sidebar = () => {
     {name: 'Add Course', path: '/educator/add-course', icon: assets.add_icon},
     {name: 'My Courses', path: '/educator/my-courses', icon: assets.my_course_icon},
     {name: 'Students Enrolled', path: '/educator/student-enrolled', icon: assets.person_tick_icon},
+    {name: 'Add Blog', path: '/educator/add-blog', icon: assets.add_icon},
+    {name: 'My Blogs', path: '/educator/my-blogs', icon: assets.file_upload_icon},
   ];
 
   return isEducator && (

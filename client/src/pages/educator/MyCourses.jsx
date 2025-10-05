@@ -94,6 +94,13 @@ const MyCourses = () => {
                         Edit
                       </button>
                       <button
+                        onClick={() => navigate(`/educator/course-blogs/${course._id}`)}
+                        className='bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-xs'
+                        title="Course Blogs"
+                      >
+                        Blogs
+                      </button>
+                      <button
                         onClick={() => handleDeleteCourse(course._id)}
                         className='bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs'
                         title="Delete Course"

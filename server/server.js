@@ -7,6 +7,7 @@ import educatorRouter from "./routes/educatorRoutes.js"
 import connectCloudinary from "./configs/cloudinary.js"
 import courseRouter from "./routes/courseRoutes.js"
 import userRouter from "./routes/userRoutes.js"
+import blogRouter from "./routes/blogRoutes.js"
 
 //Initialize express
 const app = express()
@@ -25,6 +26,7 @@ app.get('/', (req, res)=> res.send("API working"))
 app.use('/api/educator', express.json(), educatorRouter)
 app.use('/api/course', express.json(), courseRouter)
 app.use('/api/user', express.json(), userRouter)
+app.use('/api/blog', express.json(), blogRouter)
 app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
 
 // Other normal JSON routes

@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { assets, dummyTestimonial } from '../../assets/assets'
 
 const TestimonialsSection = () => {
@@ -13,7 +13,7 @@ const TestimonialsSection = () => {
           >
             <div className='flex items-center gap-4 px-5 py-4 bg-gray-500/10'>
               <img src={testimonial.image} alt={testimonial.name} 
-                className='h-12 w-12 rounded-full' 
+                className='h-12 w-12 rounded-full' y
               />
               <div>
                 <h1 className='text-lg font-medium text-gray-800'>{testimonial.name}</h1>

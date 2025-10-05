@@ -6,6 +6,8 @@ import MyEnrollments from './pages/student/MyEnrollments'
 import Player from './pages/student/Player'
 import PaymentSuccess from './pages/student/PaymentSuccess'
 import PaymentFailure from './pages/student/PaymentFailure'
+import BlogList from './pages/student/BlogList'
+import BlogViewer from './pages/student/BlogViewer'
 import Loading from './components/student/Loading'
 import Educator from './pages/educator/Educator'
 import Dashboard from './pages/educator/Dashboard'
@@ -13,6 +15,11 @@ import AddCourse from './pages/educator/AddCourse'
 import EditCourse from './pages/educator/EditCourse'
 import MyCourses from './pages/educator/MyCourses'
 import StudentsEnrolled from './pages/educator/StudentsEnrolled'
+import AddBlog from './pages/educator/AddBlog'
+import MyBlogs from './pages/educator/MyBlogs'
+import EditBlog from './pages/educator/EditBlog'
+import AddCourseBlog from './pages/educator/AddCourseBlog'
+import CourseBlogs from './pages/educator/CourseBlogs'
 import Navbar from './components/student/Navbar'
 import "quill/dist/quill.snow.css";
 import {ToastContainer} from "react-toastify"
@@ -34,6 +41,9 @@ const App = () => {
         <Route path='/player/:courseId' element={<Player />} />
         <Route path='/payment/success' element={<PaymentSuccess />} />
         <Route path='/payment/failure' element={<PaymentFailure />} />
+        <Route path='/blogs' element={<BlogList />} />
+        <Route path='/blogs/:category' element={<BlogList />} />
+        <Route path='/blog/:slug' element={<BlogViewer />} />
         <Route path='/loading/:path' element={<Loading />} />
         <Route path='/educator' element={<Educator />} >
           <Route path='/educator' element={<Dashboard />} />
@@ -41,6 +51,11 @@ const App = () => {
           <Route path='edit-course/:courseId' element={<EditCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
           <Route path='student-enrolled' element={<StudentsEnrolled />} />
+          <Route path='add-blog' element={<AddBlog />} />
+          <Route path='my-blogs' element={<MyBlogs />} />
+          <Route path='edit-blog/:blogId' element={<EditBlog />} />
+          <Route path='course-blogs/:courseId' element={<CourseBlogs />} />
+          <Route path='add-course-blog/:courseId' element={<AddCourseBlog />} />
         </Route>
       </Routes>
     </div>

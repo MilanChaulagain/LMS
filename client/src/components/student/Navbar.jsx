@@ -51,6 +51,7 @@ const Navbar = () => {
     <div className={`flex items-center justify-between px-4 sm:px-10 md:px-14 lg:px-36 border-b border-gray-500 py-4 back ${isCourseListPage ? 'bg-white' : 'bg-cyan-100/70'}`}>
         <img onClick={()=> navigate('/')} src={assets.logo} alt="Logo" className='w-28 lg:w-32 cursor-pointer'/>
         <div className='hidden md:flex items-center gap-5 text-gray-500'>
+            <Link to='/blogs' className='hover:text-gray-700'>Blogs</Link>
             <div className='flex items-center gap-5'>
                 {
                 user && <>
@@ -104,6 +105,7 @@ const Navbar = () => {
         </div>
         {/*This is for smaller phone screens*/}
         <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
+            <Link to='/blogs' className='text-xs hover:text-gray-700'>Blogs</Link>
             <div className='flex items-center gap-1 sm:gap-2 max-sm:text-xs'>
             {user && <>
                 <button className='cursor-pointer' onClick={becomeEducator}>{isEducator ? 'Educator Dashboard' : 'Become Educator'}</button>
