@@ -18,20 +18,40 @@ const CourseBlogs = () => {
       try {
         setLoading(true)
         
+        // Validate courseId
+        if (!courseId) {
+          toast.error('Course ID is missing')
+          navigate('/educator/my-courses')
+          return
+        }
+        
         // Fetch course details
+        console.log('Fetching course details for:', courseId)
         const courseResponse = await axios.get(`${backendUrl}/api/course/${courseId}`)
         if (courseResponse.data.success) {
           setCourse(courseResponse.data.courseData)
+        } else {
+          toast.error('Course not found')
+          navigate('/educator/my-courses')
+          return
         }
 
         // Fetch course blogs
+        console.log('Fetching course blogs for:', courseId)
         const blogsResponse = await axios.get(`${backendUrl}/api/blog/course/${courseId}`)
         if (blogsResponse.data.success) {
           setBlogs(blogsResponse.data.blogs)
+        } else {
+          toast.error(blogsResponse.data.message || 'Error loading blogs')
         }
       } catch (error) {
         console.error('Error fetching course and blogs:', error)
-        toast.error('Error loading course blogs')
+        if (error.response) {
+          console.error('Error response:', error.response.data)
+          toast.error(error.response.data.message || 'Error loading course blogs')
+        } else {
+          toast.error('Network error - please check your connection')
+        }
       } finally {
         setLoading(false)
       }
@@ -40,7 +60,7 @@ const CourseBlogs = () => {
     if (courseId) {
       fetchCourseAndBlogs()
     }
-  }, [courseId, backendUrl])
+  }, [courseId, backendUrl, navigate])
 
   const deleteBlog = async (blogId) => {
     if (!window.confirm('Are you sure you want to delete this blog?')) {

@@ -28,7 +28,22 @@ export const getCourseId = async(req, res)=> {
     const {id} = req.params
 
     try {
+        // Validate course ID format
+        if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid course ID format'
+            });
+        }
+
         const courseData = await Course.findById(id).populate({path: 'educator'})
+        
+        if (!courseData) {
+            return res.status(404).json({
+                success: false,
+                message: 'Course not found'
+            });
+        }
 
         //Remove lectureUrl if ISpreviewFree is false
         courseData.courseContent.forEach(chapter => {
@@ -44,7 +59,8 @@ export const getCourseId = async(req, res)=> {
             courseData
         })
     } catch (error) {
-        res.json({
+        console.error('Error in getCourseId:', error);
+        res.status(500).json({
             success: false,
             message: error.message
         })

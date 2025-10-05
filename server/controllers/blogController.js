@@ -1,6 +1,7 @@
 import Blog from '../models/Blog.js';
 import User from '../models/User.js';
 import Course from '../models/Course.js';
+import mongoose from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configure cloudinary (in case it's not configured globally)
@@ -89,12 +90,74 @@ export const getBlogBySlug = async (req, res) => {
 };
 
 // Get blogs by course
+// Test endpoint for debugging
+export const testBlogConnection = async (req, res) => {
+    try {
+        console.log('Testing database connection...');
+        
+        // Test basic blog query
+        const blogCount = await Blog.countDocuments();
+        console.log('Total blogs in database:', blogCount);
+        
+        // Test course query
+        const courseCount = await Course.countDocuments();
+        console.log('Total courses in database:', courseCount);
+        
+        // Test if courseId parameter works
+        const { courseId } = req.params;
+        if (courseId) {
+            console.log('Testing with courseId:', courseId);
+            const course = await Course.findById(courseId);
+            console.log('Course found:', course ? course.courseTitle : 'Not found');
+        }
+        
+        res.json({
+            success: true,
+            message: 'Database connection test successful',
+            data: {
+                blogCount,
+                courseCount,
+                courseId: courseId || 'not provided'
+            }
+        });
+    } catch (error) {
+        console.error('Database test error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Database test failed',
+            error: error.message
+        });
+    }
+};
+
 export const getBlogsByCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
         
+        // Validate courseId format using mongoose
+        if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid course ID format'
+            });
+        }
+        
+        console.log('Fetching blogs for courseId:', courseId);
+        
+        // Check if course exists
+        const course = await Course.findById(courseId).select('courseTitle courseDescription');
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: 'Course not found'
+            });
+        }
+        
+        console.log('Course found:', course.courseTitle);
+        
+        // Fetch blogs for this course
         const blogs = await Blog.find({ 
-            courseId, 
+            courseId: new mongoose.Types.ObjectId(courseId), 
             status: 'published' 
         })
             .populate('authorId', 'name imageUrl')
@@ -102,7 +165,7 @@ export const getBlogsByCourse = async (req, res) => {
             .sort({ publishedAt: -1 })
             .select('-topics.content');
         
-        const course = await Course.findById(courseId).select('courseTitle courseDescription');
+        console.log('Found blogs:', blogs.length);
         
         res.json({
             success: true,
@@ -110,6 +173,7 @@ export const getBlogsByCourse = async (req, res) => {
             course
         });
     } catch (error) {
+        console.error('Error in getBlogsByCourse:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching course blogs',

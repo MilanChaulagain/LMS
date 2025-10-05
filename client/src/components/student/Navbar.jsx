@@ -64,7 +64,7 @@ const Navbar = () => {
                 <div className="relative">
                     <button 
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-2 hover:bg-gray-200"
+                        className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-2 hover:bg-gray-200 cursor-pointer"
                     >
                         <img 
                             src={user.imageUrl || assets.profile_img} 
@@ -75,11 +75,11 @@ const Navbar = () => {
                     </button>
                     
                     {showUserMenu && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50 cursor-pointer">
                             <div className="py-1">
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                                 >
                                     Logout
                                 </button>

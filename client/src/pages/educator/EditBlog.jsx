@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { AppContext } from '../../context/AppContext'
 import { toast } from 'react-toastify'
 import axios from 'axios'
+import '../../assets/blog-content.css'
 
 const EditBlog = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +22,8 @@ const EditBlog = () => {
   const [loading, setLoading] = useState(false)
   const [blog, setBlog] = useState(null)
   const [fetchingBlog, setFetchingBlog] = useState(true)
+  const [previewMode, setPreviewMode] = useState(false)
+  const [selectedTopicPreview, setSelectedTopicPreview] = useState(null)
 
   const { blogId } = useParams()
   const { backendUrl, getToken } = useContext(AppContext)
@@ -104,6 +107,28 @@ const EditBlog = () => {
     setTopics(prev => prev.map((topic, i) => 
       i === index ? { ...topic, [field]: value } : topic
     ))
+  }
+
+  // Format blog content with proper HTML structure and styling
+  const formatBlogContent = (content) => {
+    if (!content) return ''
+    
+    // Convert simple line breaks to proper paragraphs
+    let formatted = content
+      .split('\n\n')
+      .map(paragraph => {
+        if (paragraph.trim() === '') return ''
+        
+        // If paragraph doesn't start with HTML tag, wrap in <p>
+        if (!paragraph.trim().startsWith('<')) {
+          return `<p>${paragraph.trim()}</p>`
+        }
+        return paragraph.trim()
+      })
+      .filter(p => p !== '')
+      .join('\n')
+    
+    return formatted
   }
 
   const handleSubmit = async (e) => {
@@ -349,17 +374,59 @@ const EditBlog = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Content *
-                    </label>
-                    <textarea
-                      value={topic.content}
-                      onChange={(e) => updateTopic(index, 'content', e.target.value)}
-                      rows="10"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Write detailed content with examples, code snippets, explanations... (HTML supported)"
-                      required
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Content *
+                      </label>
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewMode(false);
+                            setSelectedTopicPreview(null);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                            !previewMode || selectedTopicPreview !== index
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewMode(true);
+                            setSelectedTopicPreview(index);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                            previewMode && selectedTopicPreview === index
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                        >
+                          Preview
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {previewMode && selectedTopicPreview === index ? (
+                      <div className="min-h-[240px] p-4 border border-gray-300 rounded-md bg-gray-50">
+                        <div className="blog-content">
+                          <h3 className="text-xl font-semibold mb-4 text-gray-900">{topic.title || 'Topic Title'}</h3>
+                          <div dangerouslySetInnerHTML={{ __html: formatBlogContent(topic.content) }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <textarea
+                        value={topic.content}
+                        onChange={(e) => updateTopic(index, 'content', e.target.value)}
+                        rows="10"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Write detailed content with examples, code snippets, explanations... (HTML supported)"
+                        required
+                      />
+                    )}
                     <div className="text-xs text-gray-500 mt-1">
                       <p>HTML tags supported: h1, h2, h3, p, strong, em, ul, ol, li, code, pre, blockquote, a, img</p>
                       <p>Example: &lt;h2&gt;Section Title&lt;/h2&gt; &lt;p&gt;Content&lt;/p&gt; &lt;code&gt;code example&lt;/code&gt;</p>

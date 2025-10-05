@@ -22,6 +22,7 @@ import AddCourseBlog from './pages/educator/AddCourseBlog'
 import CourseBlogs from './pages/educator/CourseBlogs'
 import Navbar from './components/student/Navbar'
 import "quill/dist/quill.snow.css";
+import "react-toastify/dist/ReactToastify.css";
 import {ToastContainer} from "react-toastify"
 
 const App = () => {
@@ -30,7 +31,24 @@ const App = () => {
 
   return (
     <div className='text-default mih-h-height bg-white'>
-      <ToastContainer/>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        toastClassName="custom-toast"
+        bodyClassName="custom-toast-body"
+        style={{ 
+          top: isEducatorRoute ? '70px' : '85px',
+          zIndex: 9999,
+          right: '16px'
+        }}
+      />
       {!isEducatorRoute && <Navbar />}
       <Routes>
         <Route path='/' element={<Home />} />

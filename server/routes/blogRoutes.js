@@ -12,7 +12,8 @@ import {
     deleteBlog,
     getMyBlogs,
     toggleBlogLike,
-    searchBlogs
+    searchBlogs,
+    testBlogConnection
 } from '../controllers/blogController.js';
 
 const blogRouter = express.Router();
@@ -36,6 +37,7 @@ const upload = multer({
 blogRouter.get('/all', getAllBlogs);
 blogRouter.get('/search', searchBlogs);
 blogRouter.get('/category/:category', getBlogsByCategory);
+blogRouter.get('/test/:courseId?', testBlogConnection);
 blogRouter.get('/course/:courseId', getBlogsByCourse);
 blogRouter.get('/:slug', getBlogBySlug);
 
