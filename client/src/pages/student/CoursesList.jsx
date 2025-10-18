@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../../context/AppContext'
 import SearchBar from '../../components/student/SearchBar';
 import { useParams } from 'react-router-dom';
@@ -13,21 +13,35 @@ const CoursesList = () => {
   const {input} = useParams();
 
   const [filteredCourse, setFilteredCourse] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Initialize search query from URL parameter
+  useEffect(() => {
+    if (input) {
+      setSearchQuery(input);
+    }
+  }, [input]);
+
+  // Filter courses based on search query or URL parameter
   useEffect(() => {
     if(allCourses && allCourses.length > 0) {
       const tempCourses = allCourses.slice()
+      const currentSearch = searchQuery || input;
 
-      input ? 
+      currentSearch ? 
         setFilteredCourse(
           tempCourses.filter(
-            item => item.courseTitle.toLowerCase().includes(input.toLowerCase()
-            )
+            item => item.courseTitle.toLowerCase().includes(currentSearch.toLowerCase())
           )
         )
       : setFilteredCourse(tempCourses)
     }
-  }, [allCourses, input])
+  }, [allCourses, input, searchQuery])
+
+  // Handle real-time search input changes
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+  };
 
   return (
     <>
@@ -41,17 +55,20 @@ const CoursesList = () => {
             </span>/ <span>Course List </span></p>
           </div>
           
-            <SearchBar data={input}/>
+            <SearchBar data={input} onSearchChange={handleSearchChange}/>
 
         </div>
 
         {
-          input && <div className='inline-flex items-center gap-4 px-4 py-2 border mt-8 mb-8 text-gray-600'>
+          (input || searchQuery) && <div className='inline-flex items-center gap-4 px-4 py-2 border mt-8 mb-8 text-gray-600'>
             <p>
-              {input}
+              {searchQuery || input}
               <img src={assets.cross_icon} alt="cross" 
-                className='cursor-pointer'
-                onClick={()=> navigate('/course-list')}
+                className='cursor-pointer ml-2'
+                onClick={()=> {
+                  setSearchQuery('');
+                  navigate('/course-list');
+                }}
               />
             </p>
           </div>

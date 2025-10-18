@@ -25,6 +25,14 @@ const CourseBlogs = () => {
           return
         }
         
+        // Additional validation for courseId format
+        if (typeof courseId !== 'string' || courseId.length !== 24) {
+          console.error('Invalid courseId format:', courseId, 'Type:', typeof courseId, 'Length:', courseId.length)
+          toast.error('Invalid course ID format')
+          navigate('/educator/my-courses')
+          return
+        }
+        
         // Fetch course details
         console.log('Fetching course details for:', courseId)
         const courseResponse = await axios.get(`${backendUrl}/api/course/${courseId}`)

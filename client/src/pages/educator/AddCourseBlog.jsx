@@ -14,8 +14,9 @@ const AddCourseBlog = () => {
     status: 'draft'
   })
   const [topics, setTopics] = useState([
-    { title: '', content: '' }
+    { title: '', content: '', videoFile: null, videoUrl: '', videoSource: 'url' }
   ])
+  const [lastAddedTopicIndex, setLastAddedTopicIndex] = useState(null)
   const [thumbnail, setThumbnail] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState('')
   const [loading, setLoading] = useState(false)
@@ -80,6 +81,10 @@ const AddCourseBlog = () => {
 
   const addTopic = () => {
     setTopics(prev => [...prev, { title: '', content: '' }])
+    const newIndex = topics.length
+    setLastAddedTopicIndex(newIndex)
+    // remove highlight after short time
+    setTimeout(()=> setLastAddedTopicIndex(null), 700)
   }
 
   const removeTopic = (index) => {
@@ -88,10 +93,56 @@ const AddCourseBlog = () => {
     }
   }
 
+  const moveTopicUp = (index) => {
+    if (index <= 0) return
+    setTopics(prev => {
+      const copy = [...prev]
+      const tmp = copy[index - 1]
+      copy[index - 1] = copy[index]
+      copy[index] = tmp
+      return copy
+    })
+    // adjust highlight index if necessary
+    if (lastAddedTopicIndex === index) setLastAddedTopicIndex(index - 1)
+    else if (lastAddedTopicIndex === index - 1) setLastAddedTopicIndex(index)
+  }
+
+  const moveTopicDown = (index) => {
+    if (index >= topics.length - 1) return
+    setTopics(prev => {
+      const copy = [...prev]
+      const tmp = copy[index + 1]
+      copy[index + 1] = copy[index]
+      copy[index] = tmp
+      return copy
+    })
+    if (lastAddedTopicIndex === index) setLastAddedTopicIndex(index + 1)
+    else if (lastAddedTopicIndex === index + 1) setLastAddedTopicIndex(index)
+  }
+
   const updateTopic = (index, field, value) => {
     setTopics(prev => prev.map((topic, i) => 
       i === index ? { ...topic, [field]: value } : topic
     ))
+  }
+
+  const handleTopicVideoSourceChange = (index, value) => {
+    setTopics(prev => prev.map((topic, i) => i === index ? { ...topic, videoSource: value, videoFile: null, videoUrl: value === 'url' ? topic.videoUrl : '' } : topic))
+  }
+
+  const handleTopicVideoChange = (index, file) => {
+    if (!file) return;
+    // accept only video files
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a valid video file');
+      return;
+    }
+
+    setTopics(prev => prev.map((topic, i) => i === index ? { ...topic, videoFile: file } : topic))
+  }
+
+  const removeTopicVideo = (index) => {
+    setTopics(prev => prev.map((topic, i) => i === index ? { ...topic, videoFile: null, videoUrl: '' } : topic))
   }
 
   // Format blog content with proper HTML structure and styling
@@ -140,7 +191,43 @@ const AddCourseBlog = () => {
       formDataToSend.append('tags', formData.tags)
       formDataToSend.append('status', formData.status)
       formDataToSend.append('courseId', courseId)
-      formDataToSend.append('topics', JSON.stringify(topics))
+      // Upload topic videos (if any) and attach videoUrl to topics
+      const topicsWithVideoUrls = []
+      for (let i = 0; i < topics.length; i++) {
+        const t = { ...topics[i] }
+        if (t.videoFile) {
+          try {
+            const uploadFd = new FormData()
+            uploadFd.append('video', t.videoFile)
+            const uploadRes = await axios.post(`${backendUrl}/api/educator/upload-video`, uploadFd, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+              },
+              timeout: 300000,
+              maxContentLength: 500 * 1024 * 1024,
+              maxBodyLength: 500 * 1024 * 1024,
+              onUploadProgress: (ev) => {
+                const pct = ev.total ? Math.round((ev.loaded * 100) / ev.total) : null
+                if (pct !== null) console.log(`Topic ${i+1} upload: ${pct}%`)
+              }
+            })
+            if (uploadRes.data && uploadRes.data.success) {
+              t.videoUrl = uploadRes.data.videoUrl
+            } else {
+              console.warn('Topic video upload failed', uploadRes.data)
+            }
+          } catch (err) {
+            console.error('Error uploading topic video', err)
+            toast.error(`Failed to upload video for topic ${i+1}`)
+          }
+        }
+        // remove file ref before sending
+        if (t.videoFile) delete t.videoFile
+        topicsWithVideoUrls.push(t)
+      }
+
+      formDataToSend.append('topics', JSON.stringify(topicsWithVideoUrls))
       formDataToSend.append('thumbnail', thumbnail)
 
       const { data } = await axios.post(
@@ -313,26 +400,32 @@ const AddCourseBlog = () => {
             <button
               type="button"
               onClick={addTopic}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded transform transition-transform duration-150 active:scale-95 focus:outline-none"
             >
-              Add Topic
+                + Add Topic
             </button>
           </div>
 
           <div className="space-y-6">
             {topics.map((topic, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div key={index} className={`border border-gray-200 rounded-lg p-4 transition-shadow duration-300 ${lastAddedTopicIndex === index ? 'ring-2 ring-blue-400 shadow-lg' : ''}`}>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-md font-medium text-gray-800">Topic {index + 1}</h3>
-                  {topics.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeTopic(index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col">
+                      <button type="button" onClick={() => moveTopicUp(index)} className="text-sm px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">▲</button>
+                      <button type="button" onClick={() => moveTopicDown(index)} className="mt-1 text-sm px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">▼</button>
+                    </div>
+                    {topics.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTopic(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -404,6 +497,39 @@ const AddCourseBlog = () => {
                         required
                       />
                     )}
+                    <div className="mt-3">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2">
+                          <input type="radio" name={`videoSource-${index}`} value="url" checked={topic.videoSource === 'url'} onChange={() => handleTopicVideoSourceChange(index, 'url')} className="mr-2" />
+                          YouTube Link
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input type="radio" name={`videoSource-${index}`} value="upload" checked={topic.videoSource === 'upload'} onChange={() => handleTopicVideoSourceChange(index, 'upload')} className="mr-2" />
+                          Upload Video
+                        </label>
+                      </div>
+
+                      {topic.videoSource === 'url' ? (
+                        <div className="mt-2 flex items-center gap-3">
+                          <input type="text" placeholder="YouTube URL" value={topic.videoUrl || ''} onChange={(e) => updateTopic(index, 'videoUrl', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                      ) : (
+                        <div className="mt-2 flex items-center gap-3">
+                          <label className="flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded cursor-pointer text-sm">
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={(e) => handleTopicVideoChange(index, e.target.files[0])}
+                              hidden
+                            />
+                            Upload Topic Video
+                          </label>
+                          {topic.videoFile && <div className="text-sm text-green-700">{topic.videoFile.name}</div>}
+                          {topic.videoUrl && !topic.videoFile && <div className="text-sm text-blue-700">Attached: <a href={topic.videoUrl} target="_blank" rel="noreferrer" className="underline">View</a></div>}
+                          {topic.videoFile && <button type="button" onClick={() => removeTopicVideo(index)} className="text-sm text-red-600">Remove Video</button>}
+                        </div>
+                      )}
+                    </div>
                     <div className="text-xs text-gray-500 mt-1">
                       <p>HTML tags supported: h1, h2, h3, p, strong, em, ul, ol, li, code, pre, blockquote, a, img</p>
                       <p>Example: &lt;h2&gt;Section Title&lt;/h2&gt; &lt;p&gt;Content&lt;/p&gt; &lt;code&gt;code example&lt;/code&gt;</p>

@@ -1,11 +1,29 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { assets } from '../../assets/assets'
 import { useNavigate } from 'react-router-dom'
 
-const SearchBar = ({data}) => {
+const SearchBar = ({data, onSearchChange}) => {
 
   const navigate = useNavigate();
   const [input, setInput] = useState(data ? data : '');
+
+  // Sync input with data prop changes
+  useEffect(() => {
+    if (data !== undefined) {
+      setInput(data);
+    }
+  }, [data]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInput(value);
+    
+    // Call the callback for real-time search if provided
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
+  };
 
   const onSearchHandler = (e)=> {
     e.preventDefault()
@@ -22,7 +40,7 @@ const SearchBar = ({data}) => {
         />
 
         <input 
-          onChange={e => setInput(e.target.value)}
+          onChange={handleInputChange}
           value = {input}
           type='text' 
           placeholder='Search for courses'
@@ -37,6 +55,11 @@ const SearchBar = ({data}) => {
 
       </form>
   )
+}
+
+SearchBar.propTypes = {
+  data: PropTypes.string,
+  onSearchChange: PropTypes.func
 }
 
 export default SearchBar

@@ -35,16 +35,31 @@ export const uploadVideo = async (req, res) => {
         const videoUpload = await cloudinary.uploader.upload(videoFile.path, {
             resource_type: "video",
             folder: "course_videos",
-            transformation: [
-                { quality: "auto" },
-                { format: "mp4" }
+            eager_async: true, // Process large videos asynchronously
+            eager: [
+                { quality: "auto", format: "mp4" }
+            ],
+            access_control: [
+                {
+                    access_type: "anonymous"
+                }
             ]
         });
+
+        // Ensure the URL ends with .mp4 for better browser compatibility
+        let videoUrl = videoUpload.secure_url;
+        
+        // If the URL doesn't already have an extension, add .mp4
+        if (!videoUrl.match(/\.(mp4|webm|ogg)$/i)) {
+            // Replace the file extension with .mp4
+            videoUrl = videoUrl.replace(/\.[^.]+$/, '.mp4');
+        }
 
         return res.json({
             success: true,
             message: "Video uploaded successfully",
-            videoUrl: videoUpload.secure_url
+            videoUrl: videoUrl,
+            publicId: videoUpload.public_id
         });
 
     } catch (error) {

@@ -105,6 +105,14 @@ const AddCourse = () => {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
+          },
+          timeout: 300000, // 5 minutes timeout for large video uploads
+          maxContentLength: 500 * 1024 * 1024, // 500MB
+          maxBodyLength: 500 * 1024 * 1024, // 500MB
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload Progress: ${percentCompleted}%`);
+            // You could update a progress bar here
           }
         });
         

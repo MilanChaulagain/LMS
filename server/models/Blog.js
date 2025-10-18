@@ -52,6 +52,10 @@ const blogSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        videoUrl: {
+            type: String,
+            default: null
+        },
         order: {
             type: Number,
             required: true

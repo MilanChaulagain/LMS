@@ -5,6 +5,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 import '../../assets/blog-content.css'
 import profileImg from '../../assets/profile_img.png'
+import VideoPlayer from '../../components/student/VideoPlayer'
 
 const BlogViewer = () => {
   const [blog, setBlog] = useState(null)
@@ -266,6 +267,11 @@ const BlogViewer = () => {
                   </div>
 
                   {/* Topic Content */}
+                  {currentTopic.videoUrl && (
+                    <div className="mb-6">
+                      <VideoPlayer url={currentTopic.videoUrl} autoplay={false} className="w-full aspect-video" />
+                    </div>
+                  )}
                   <div className="prose prose-xl max-w-none">
                     <div 
                       dangerouslySetInnerHTML={{ __html: formatBlogContent(currentTopic.content) }}

@@ -81,7 +81,7 @@ const Login = ({ switchToRegister, onClose }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
@@ -92,7 +92,7 @@ const Login = ({ switchToRegister, onClose }) => {
           Don&apos;t have an account?{' '}
           <button
             onClick={switchToRegister}
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline cursor-pointer"
           >
             Register here
           </button>

@@ -342,6 +342,14 @@ export const getBlogForEdit = async (req, res) => {
         const { id } = req.params;
         const authorId = req.userId;
         
+        // Validate blog ID format
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid blog ID format'
+            });
+        }
+        
         const blog = await Blog.findById(id)
             .populate('courseId', 'courseTitle courseThumbnail');
         
@@ -359,6 +367,8 @@ export const getBlogForEdit = async (req, res) => {
                 message: 'You can only edit your own blogs'
             });
         }
+        
+        console.log('Blog for edit - courseId type:', typeof blog.courseId, 'courseId value:', blog.courseId);
         
         res.json({
             success: true,

@@ -12,6 +12,11 @@ const VideoPlayer = ({ url, className = 'w-full aspect-video', autoplay = false,
     );
   };
 
+  // Function to check if URL is a Cloudinary video
+  const isCloudinaryUrl = (videoUrl) => {
+    return videoUrl && videoUrl.includes('cloudinary.com');
+  };
+
   // Function to extract YouTube video ID
   const getYouTubeVideoId = (videoUrl) => {
     const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
@@ -40,24 +45,51 @@ const VideoPlayer = ({ url, className = 'w-full aspect-video', autoplay = false,
     }
   }
 
-  // For all other URLs (including Cloudinary, Vimeo, direct video files), use ReactPlayer
+  // For Cloudinary videos, use native HTML5 video player for better compatibility
+  if (isCloudinaryUrl(url)) {
+    return (
+      <div className={className}>
+        <video
+          src={url}
+          controls
+          autoPlay={autoplay}
+          className="w-full h-full"
+          controlsList="nodownload"
+          preload="auto"
+          style={{ objectFit: 'contain' }}
+          onError={(e) => {
+            console.error('Video playback error:', e);
+            console.error('Video URL:', url);
+          }}
+          onLoadStart={() => console.log('Video loading started:', url)}
+          onCanPlay={() => console.log('Video can play:', url)}
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  }
+
+  // For all other URLs (Vimeo, direct video files, etc.), use ReactPlayer
   return (
-    <ReactPlayer
-      url={url}
-      width="100%"
-      height="100%"
-      playing={autoplay}
-      controls={true}
-      className={className}
-      config={{
-        file: {
-          attributes: {
-            controlsList: 'nodownload',
-            disablePictureInPicture: true
+    <div className={className}>
+      <ReactPlayer
+        url={url}
+        width="100%"
+        height="100%"
+        playing={autoplay}
+        controls={true}
+        config={{
+          file: {
+            attributes: {
+              controlsList: 'nodownload',
+              disablePictureInPicture: true,
+              crossOrigin: 'anonymous'
+            }
           }
-        }
-      }}
-    />
+        }}
+      />
+    </div>
   );
 };
 

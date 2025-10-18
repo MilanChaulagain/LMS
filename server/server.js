@@ -20,17 +20,18 @@ await connectCloudinary()
 
 app.use(cors())
 
+// Increase payload size limit for video uploads (500MB)
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
 
 //Routes
 app.get('/', (req, res)=> res.send("API working"))
-app.use('/api/educator', express.json(), educatorRouter)
-app.use('/api/course', express.json(), courseRouter)
-app.use('/api/user', express.json(), userRouter)
-app.use('/api/blog', express.json(), blogRouter)
+app.use('/api/educator', educatorRouter)
+app.use('/api/course', courseRouter)
+app.use('/api/user', userRouter)
+app.use('/api/blog', blogRouter)
 app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
-
-// Other normal JSON routes
-app.use(express.json());
 
 //PORT
 const PORT = process.env.PORT || 5000
